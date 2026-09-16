@@ -1,24 +1,31 @@
 /**
  * GHY GPT — Unified API Client Configuration
- * 
- * Provides dynamic base URL resolution for:
- * 1. Web browser (same-origin relative paths or VITE_API_BASE_URL)
- * 2. Mobile APK / Capacitor / Cordova / file:// environments (fallback to production Render backend)
+ *
+ * Web:
+ *   Uses VITE_API_BASE_URL when provided, otherwise relative API paths.
+ *
+ * Android / Capacitor:
+ *   Always uses the production Render backend.
  */
 
-export const PRODUCTION_BACKEND_URL = "https://ghy-gpt.onrender.com";
+export const PRODUCTION_BACKEND_URL =
+  "https://ghy-gpt.onrender.com";
 
 export function getApiBaseUrl(): string {
-  // If explicitly overridden via Vite env var
-  if (import.meta.env?.VITE_API_BASE_URL) {
-    return (import.meta.env.VITE_API_BASE_URL as string).replace(/\/+$/, "");
+  // Explicit environment override
+  const envUrl = import.meta.env?.VITE_API_BASE_URL;
+
+  if (envUrl) {
+    return String(envUrl).replace(/\/+$/, "");
   }
 
-  // Detect if running inside a packaged mobile container or local file context
+  // Capacitor / Android detection
   if (typeof window !== "undefined") {
-    const { protocol, hostname, origin } = window.location;
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const origin = window.location.origin;
 
-    // file://, capacitor://, ionic://, content://, or mobile local app protocols
+    // Capacitor / native app protocols
     if (
       protocol === "file:" ||
       protocol === "capacitor:" ||
@@ -29,29 +36,40 @@ export function getApiBaseUrl(): string {
       return PRODUCTION_BACKEND_URL;
     }
 
-    // Android WebView Capacitor standard origins (https://localhost or http://localhost)
-    if (origin === "https://localhost" || origin === "http://localhost") {
+    // Capacitor Android WebView
+    if (
+      origin === "https://localhost" ||
+      origin === "http://localhost"
+    ) {
       return PRODUCTION_BACKEND_URL;
     }
 
-    // Standard Android WebView user-agent check
+    // Android WebView running on localhost
     const ua = navigator?.userAgent || "";
-    if (/wv|Android.*Version\/[0-9.]+/i.test(ua) && hostname === "localhost") {
+
+    if (
+      hostname === "localhost" &&
+      /Android/i.test(ua)
+    ) {
       return PRODUCTION_BACKEND_URL;
     }
 
-    // If served from an external device or localhost without a backend proxy on the same port
-    if (hostname === "localhost" && window.location.port !== "3000") {
+    // Other localhost app environments
+    if (hostname === "localhost") {
       return PRODUCTION_BACKEND_URL;
     }
   }
 
-  // Default for web: use relative endpoints so it routes through Express Vite server
+  // Normal web deployment
   return "";
 }
 
 export function buildApiUrl(path: string): string {
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const cleanPath = path.startsWith("/")
+    ? path
+    : `/${path}`;
+
   const base = getApiBaseUrl();
+
   return `${base}${cleanPath}`;
 }
