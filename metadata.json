@@ -1,0 +1,6 @@
+{
+  "name": "GHY GPT",
+  "description": "AI Newsroom Assistant for digital journalism: news writing, translation, headlines, rewriting, proofreading, SEO, and illustrative image generation in Assamese, English, and Hindi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

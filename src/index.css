@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-serif: 'Newsreader', Georgia, serif;
+    --font-assamese: 'Noto Sans Bengali', sans-serif;
+    --font-hindi: 'Noto Sans Devanagari', sans-serif;
+    --font-mono: 'Fira Code', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: #0f172a;
+    background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+.font-assamese {
+  font-family: 'Noto Sans Bengali', var(--font-sans);
+}
+
+.font-hindi {
+  font-family: 'Noto Sans Devanagari', var(--font-sans);
+}
+
+.font-editorial {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+/* Custom scrollbar for news copy and chat stream */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.app-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #64748b;
+  background: #ffffff;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.footer-brand strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.footer-brand span {
+  font-size: 10px;
+}
+
+.app-footer p {
+  margin: 3px auto;
+  max-width: 700px;
+}
+
+.footer-motto {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #334155;
+}
+
+.copyright {
+  margin-top: 6px !important;
+  font-size: 9px;
+}
