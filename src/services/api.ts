@@ -65,6 +65,15 @@ function extractCleanErrorMessage(
   return str;
 }
 
+/**
+ * Shared JSON POST helper.
+ *
+ * Native Android/iOS:
+ * Uses CapacitorHttp.
+ *
+ * Normal web:
+ * Uses browser fetch.
+ */
 async function postJson<T>(
   url: string,
   body: unknown
@@ -88,7 +97,10 @@ async function postJson<T>(
       response.status
     );
 
-    if (response.status < 200 || response.status >= 300) {
+    if (
+      response.status < 200 ||
+      response.status >= 300
+    ) {
       const message = extractCleanErrorMessage(
         response.data,
         response.status
@@ -127,6 +139,9 @@ async function postJson<T>(
   return (await response.json()) as T;
 }
 
+/**
+ * Generate newsroom content.
+ */
 export async function requestNewsGeneration(
   payload: GenerateRequestPayload
 ): Promise<string> {
@@ -147,6 +162,9 @@ export async function requestNewsGeneration(
   return data.text;
 }
 
+/**
+ * Generate an AI image.
+ */
 export async function requestNewsImage(params: {
   prompt: string;
   aspectRatio: string;
@@ -170,6 +188,9 @@ export async function requestNewsImage(params: {
   };
 }
 
+/**
+ * Check backend health.
+ */
 export async function checkServerHealth(): Promise<{
   status: string;
   hasApiKey: boolean;
@@ -183,6 +204,10 @@ export async function checkServerHealth(): Promise<{
     );
 
     if (Capacitor.isNativePlatform()) {
+      console.log(
+        "[GHY GPT] Health check using native HTTP"
+      );
+
       const response =
         await CapacitorHttp.get({
           url,
