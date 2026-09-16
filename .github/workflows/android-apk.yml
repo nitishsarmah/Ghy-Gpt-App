@@ -11,10 +11,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Verify Node.js
+        run: |
+          echo "Node version:"
+          node -v
+          echo "NPM version:"
+          npm -v
 
       - name: Setup Java JDK 21
         uses: actions/setup-java@v4
@@ -25,7 +33,9 @@ jobs:
 
       - name: Verify Java
         run: |
+          echo "Java version:"
           java -version
+          echo "Javac version:"
           javac -version
 
       - name: Install dependencies
@@ -35,7 +45,13 @@ jobs:
         run: npm run build
 
       - name: Install Capacitor
-        run: npm install @capacitor/core @capacitor/cli @capacitor/android
+        run: |
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+
+      - name: Verify Capacitor
+        run: |
+          node -v
+          npx cap --version
 
       - name: Initialize Capacitor
         run: npx cap init "GHY GPT" "com.theguwahati.ghygpt" --web-dir=dist
