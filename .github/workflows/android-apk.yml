@@ -57,8 +57,8 @@ jobs:
           test -f capacitor.config.ts
           echo "Capacitor configuration found"
 
-      - name: Add Android platform
-        run: npx cap add android
+      - name: Sync Android
+        run: npx cap sync android
 
       - name: Sync Android
         run: npx cap sync android
