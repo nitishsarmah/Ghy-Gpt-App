@@ -33,7 +33,7 @@ function extractCleanErrorMessage(
 ): string {
   if (!raw) {
     return fallbackStatus
-      ? `Request failed (status ${fallbackStatus})`
+      ? "Request failed (status " + fallbackStatus + ")"
       : "An error occurred";
   }
 
@@ -65,22 +65,12 @@ function extractCleanErrorMessage(
   return str;
 }
 
-/**
- * POST helper
- *
- * Android / Capacitor:
- *   Uses native CapacitorHttp to avoid WebView fetch/CORS problems.
- *
- * Web:
- *   Uses normal browser fetch.
- */
 async function postJson<T>(
   url: string,
   body: unknown
 ): Promise<T> {
   console.log("[GHY GPT] POST:", url);
 
-  // Android / iOS / native Capacitor
   if (Capacitor.isNativePlatform()) {
     console.log("[GHY GPT] Using native Capacitor HTTP");
 
@@ -110,7 +100,6 @@ async function postJson<T>(
     return response.data as T;
   }
 
-  // Normal web browser
   console.log("[GHY GPT] Using browser fetch");
 
   const response = await fetch(url, {
@@ -193,7 +182,6 @@ export async function checkServerHealth(): Promise<{
       url
     );
 
-    // Native Capacitor
     if (Capacitor.isNativePlatform()) {
       const response =
         await CapacitorHttp.get({
@@ -216,7 +204,6 @@ export async function checkServerHealth(): Promise<{
       return response.data;
     }
 
-    // Web browser
     const response = await fetch(url);
 
     if (!response.ok) {
