@@ -1,4 +1,3 @@
-```ts
 import {
   Capacitor,
   CapacitorHttp,
@@ -251,4 +250,3 @@ export async function checkServerHealth(): Promise<{
     };
   }
 }
-```
