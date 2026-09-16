@@ -52,10 +52,12 @@ jobs:
           node -v
           npx cap --version
 
-      - name: Initialize Capacitor
-        run: npx cap init "GHY GPT" "com.theguwahati.ghygpt" --web-dir=dist
+      - name: Verify Capacitor project
+        run: |
+          test -f capacitor.config.ts
+          echo "Capacitor configuration found"
 
-      - name: Add Android
+      - name: Add Android platform
         run: npx cap add android
 
       - name: Sync Android
