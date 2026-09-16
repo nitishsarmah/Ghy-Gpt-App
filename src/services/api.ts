@@ -1,4 +1,15 @@
-import { AttachedFile, GeneratedImageMetadata, NewsMode } from "../types";
+```ts
+import {
+  Capacitor,
+  CapacitorHttp,
+} from "@capacitor/core";
+
+import {
+  AttachedFile,
+  GeneratedImageMetadata,
+  NewsMode,
+} from "../types";
+
 import { buildApiUrl } from "../config/apiConfig";
 
 export interface GenerateRequestPayload {
@@ -13,50 +24,137 @@ export interface GenerateRequestPayload {
 export interface GenerateResponsePayload {
   text: string;
   mode?: NewsMode;
+  modelUsed?: string;
 }
 
-function extractCleanErrorMessage(raw: any, fallbackStatus?: number): string {
-  if (!raw) return fallbackStatus ? `Request failed (status ${fallbackStatus})` : "An error occurred";
-  let str = typeof raw === "string" ? raw : raw.error || raw.message || JSON.stringify(raw);
-  
-  // Try to parse nested JSON if present (e.g. {"error":{"message":"..."}})
+function extractCleanErrorMessage(
+  raw: any,
+  fallbackStatus?: number
+): string {
+  if (!raw) {
+    return fallbackStatus
+      ? `Request failed (status ${fallbackStatus})`
+      : "An error occurred";
+  }
+
+  let str =
+    typeof raw === "string"
+      ? raw
+      : raw.error || raw.message || JSON.stringify(raw);
+
   try {
     const jsonMatch = str.match(/\{[\s\S]*\}/);
+
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
+
       if (parsed?.error?.message) {
         return parsed.error.message;
       }
+
       if (parsed?.message) {
         return parsed.message;
       }
     }
   } catch {}
 
-  // Strip technical callstack or prefix
-  str = str.replace(/^ApiError:\s*/i, "").replace(/^Error:\s*/i, "");
+  str = str
+    .replace(/^ApiError:\s*/i, "")
+    .replace(/^Error:\s*/i, "");
+
   return str;
+}
+
+/**
+ * POST helper
+ *
+ * Android / Capacitor:
+ *   Uses native CapacitorHttp to avoid WebView fetch/CORS problems.
+ *
+ * Web:
+ *   Uses normal browser fetch.
+ */
+async function postJson<T>(
+  url: string,
+  body: unknown
+): Promise<T> {
+  console.log("[GHY GPT] POST:", url);
+
+  // Android / iOS / native Capacitor
+  if (Capacitor.isNativePlatform()) {
+    console.log("[GHY GPT] Using native Capacitor HTTP");
+
+    const response = await CapacitorHttp.post({
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      data: body,
+    });
+
+    console.log(
+      "[GHY GPT] Native HTTP status:",
+      response.status
+    );
+
+    if (response.status < 200 || response.status >= 300) {
+      const message = extractCleanErrorMessage(
+        response.data,
+        response.status
+      );
+
+      throw new Error(message);
+    }
+
+    return response.data as T;
+  }
+
+  // Normal web browser
+  console.log("[GHY GPT] Using browser fetch");
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({}));
+
+    const message = extractCleanErrorMessage(
+      errorData,
+      response.status
+    );
+
+    throw new Error(message);
+  }
+
+  return (await response.json()) as T;
 }
 
 export async function requestNewsGeneration(
   payload: GenerateRequestPayload
 ): Promise<string> {
   const url = buildApiUrl("/api/generate");
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const message = extractCleanErrorMessage(errorData, response.status);
-    throw new Error(message);
+  const data =
+    await postJson<GenerateResponsePayload>(
+      url,
+      payload
+    );
+
+  if (!data?.text) {
+    throw new Error(
+      "The server returned an empty newsroom response."
+    );
   }
 
-  const data: GenerateResponsePayload = await response.json();
   return data.text;
 }
 
@@ -66,37 +164,79 @@ export async function requestNewsImage(params: {
   preset: string;
 }): Promise<GeneratedImageMetadata> {
   const url = buildApiUrl("/api/generate-image");
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(params),
-  });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const message = extractCleanErrorMessage(errorData, response.status);
-    throw new Error(message);
-  }
+  const data = await postJson<any>(
+    url,
+    params
+  );
 
-  const data = await response.json();
   return {
     imageUrl: data.imageUrl,
     aspectRatio: data.aspectRatio,
     preset: data.preset,
     prompt: data.prompt,
-    disclaimer: data.disclaimer || "Illustrative AI Image - Not a photograph of actual events",
+    disclaimer:
+      data.disclaimer ||
+      "Illustrative AI Image - Not a photograph of actual events",
   };
 }
 
-export async function checkServerHealth(): Promise<{ status: string; hasApiKey: boolean }> {
+export async function checkServerHealth(): Promise<{
+  status: string;
+  hasApiKey: boolean;
+}> {
   try {
     const url = buildApiUrl("/api/health");
+
+    console.log(
+      "[GHY GPT] Health check:",
+      url
+    );
+
+    // Native Capacitor
+    if (Capacitor.isNativePlatform()) {
+      const response =
+        await CapacitorHttp.get({
+          url,
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+      if (
+        response.status < 200 ||
+        response.status >= 300
+      ) {
+        return {
+          status: "offline",
+          hasApiKey: false,
+        };
+      }
+
+      return response.data;
+    }
+
+    // Web browser
     const response = await fetch(url);
-    if (!response.ok) return { status: "offline", hasApiKey: false };
+
+    if (!response.ok) {
+      return {
+        status: "offline",
+        hasApiKey: false,
+      };
+    }
+
     return await response.json();
-  } catch {
-    return { status: "offline", hasApiKey: false };
+  } catch (error) {
+    console.error(
+      "[GHY GPT] Health check failed:",
+      error
+    );
+
+    return {
+      status: "offline",
+      hasApiKey: false,
+    };
   }
 }
+```
