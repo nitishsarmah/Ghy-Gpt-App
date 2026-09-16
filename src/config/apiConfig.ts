@@ -12,20 +12,26 @@ export const PRODUCTION_BACKEND_URL =
   "https://ghy-gpt.onrender.com";
 
 export function getApiBaseUrl(): string {
-  // Explicit environment override
   const envUrl = import.meta.env?.VITE_API_BASE_URL;
 
   if (envUrl) {
-    return String(envUrl).replace(/\/+$/, "");
+    const url = String(envUrl).replace(/\/+$/, "");
+    console.log("[GHY GPT] API Base URL from env:", url);
+    return url;
   }
 
-  // Capacitor / Android detection
   if (typeof window !== "undefined") {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
     const origin = window.location.origin;
 
-    // Capacitor / native app protocols
+    console.log("[GHY GPT] WebView info:", {
+      protocol,
+      hostname,
+      origin,
+      userAgent: navigator?.userAgent || "",
+    });
+
     if (
       protocol === "file:" ||
       protocol === "capacitor:" ||
@@ -33,34 +39,45 @@ export function getApiBaseUrl(): string {
       protocol === "content:" ||
       protocol === "app:"
     ) {
+      console.log(
+        "[GHY GPT] Using production backend:",
+        PRODUCTION_BACKEND_URL
+      );
       return PRODUCTION_BACKEND_URL;
     }
 
-    // Capacitor Android WebView
     if (
       origin === "https://localhost" ||
       origin === "http://localhost"
     ) {
+      console.log(
+        "[GHY GPT] Capacitor localhost detected. Using:",
+        PRODUCTION_BACKEND_URL
+      );
       return PRODUCTION_BACKEND_URL;
     }
 
-    // Android WebView running on localhost
     const ua = navigator?.userAgent || "";
 
-    if (
-      hostname === "localhost" &&
-      /Android/i.test(ua)
-    ) {
+    if (hostname === "localhost" && /Android/i.test(ua)) {
+      console.log(
+        "[GHY GPT] Android localhost detected. Using:",
+        PRODUCTION_BACKEND_URL
+      );
       return PRODUCTION_BACKEND_URL;
     }
 
-    // Other localhost app environments
     if (hostname === "localhost") {
+      console.log(
+        "[GHY GPT] Localhost detected. Using:",
+        PRODUCTION_BACKEND_URL
+      );
       return PRODUCTION_BACKEND_URL;
     }
   }
 
-  // Normal web deployment
+  console.log("[GHY GPT] Normal web mode: using relative API paths");
+
   return "";
 }
 
@@ -70,6 +87,9 @@ export function buildApiUrl(path: string): string {
     : `/${path}`;
 
   const base = getApiBaseUrl();
+  const finalUrl = `${base}${cleanPath}`;
 
-  return `${base}${cleanPath}`;
+  console.log("[GHY GPT] API Request URL:", finalUrl);
+
+  return finalUrl;
 }
